@@ -36,13 +36,9 @@ Written by Chris Rollins
 	function socketEvents()
 	{
 		socket = io.connect();
-		socket.on('test', function(data) {
-			console.log('TEST');
-			socket.emit('testing', {foo:'bar'});
-		})
 		socket.on("map", function(data)
 		{
-			console.log('map', data);
+			//console.log('map', data);
 			mapArr = data.mapArr;
 		});
 
@@ -53,10 +49,11 @@ Written by Chris Rollins
 
 		socket.on("join_game", function(data)
 		{
-			var p = data.you;
+			var i = data.you;
+			var p = players[i];
 			var x = p.location[0] % 50;
 			var y = Math.floor(p.location[0]/50);
-			localPlayer = new Character(x, y, p.health, p.ammo, p.name);
+			localPlayer = new Character(x, y, p.health, p.ammo, p.name, i);
 		});
 
 		socket.on("new_player", function(data)
@@ -67,6 +64,12 @@ Written by Chris Rollins
 		socket.on("player_move", function(data)
 		{
 			players[data[ndex]].location = data.location;
+			if(data[ndex] == localPlayer.ndex)
+			{
+				console.log(data[ndex], localPlayer.ndex);
+				localPlayer.position = data.location;
+				localPlayer.render();
+			}
 		});
 
 		socket.on("new_name", function(data)
@@ -155,9 +158,9 @@ Written by Chris Rollins
 		c.getContext("2d").putImageData(pixels, 0, 0);
 	}
 
-	function Character(startX, startY, health, ammo, name)
+	function Character(startX, startY, health, ammo, name, ndex)
 	{
-		var position = [startX, startY]; //The getter returns an object {x: xval, y: yval}
+		var position = [startX, startY];
 		var facing = [1, 0];
 		var name = name;
 		var charCanvas = document.getElementById("localplayer_canvas");
@@ -172,11 +175,13 @@ Written by Chris Rollins
 		clearCanvas(charCanvas);
 
 		this.busy = 0;
+
+		this.ndex = ndex;
 		
 		this.init = function()
 		{
-			console.log(position);
-			placeCharacter(position[0], position[1], true);
+			//console.log(position);
+			requestPosition(position[0], position[1]);
 		};
 
 		this.moveForward = function()
@@ -185,7 +190,7 @@ Written by Chris Rollins
 			{
 				var x = position[0] + facing[0];
 				var y = position[1] + facing[1];
-				placeCharacter(x, y, false);
+				requestPosition(x, y);
 			}
 		};
 
@@ -235,33 +240,36 @@ Written by Chris Rollins
 			}
 		};
 
-		function placeCharacter(newX, newY, ignoreCollision)
+		this.render = function()
 		{
 			var visualX = (newX * blocksize) - (newX * blocksize)%blocksize;
 			var visualY = (newY * blocksize) - (newY * blocksize)%blocksize;
-			var tempX = visualX;
-			var tempY = visualY;
-
-			if(ignoreCollision === undefined)
-			{
-				ignoreCollision = false;
-			}
-			
-			if(mapArr[50*newY+newX] == 0 || ignoreCollision === true)
+			if(mapArr[50*newY+newX] == 0)
 			{
 				clearCanvas(charCanvas);
 
 				position = [newX, newY];
 				charContext.fillStyle = "rgba(0, 100, 255, 1.0)";
 				charContext.fillRect(mapOffset + visualX, mapOffset + visualY, blocksize, blocksize);
+			}
+		};
 
+		function requestPosition(newX, newY)
+		{
+			var visualX = (newX * blocksize) - (newX * blocksize)%blocksize;
+			var visualY = (newY * blocksize) - (newY * blocksize)%blocksize;
+			var tempX = visualX;
+			var tempY = visualY;
+			
+			if(mapArr[50*newY+newX] == 0)
+			{
 				socket.emit("movement_request", {location: [50*newY+newX, localPlayer.getFacing()]}); 
 			}
 			else
 			{
 				charContext.fillStyle = "rgba(255, 0, 0, 1.0)";
 				charContext.fillRect(mapOffset + visualX, mapOffset + visualY, blocksize, blocksize);
-				setTimeout(function(){clearCanvas(charCanvas); placeCharacter(position[0], position[1], true)},2000);
+				setTimeout(function(){clearCanvas(charCanvas);},2000);
 			}
 		}
 	}
