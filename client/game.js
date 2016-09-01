@@ -34,9 +34,13 @@ Written by Chris Rollins
 	function socketEvents()
 	{
 		socket = io.connect();
-
+		socket.on('test', function(data) {
+			console.log('TEST');
+			socket.emit('testing', {foo:'bar'});
+		})
 		socket.on("map", function(data)
 		{
+			console.log('map', data);
 			mapArr = data.mapArr;
 			drawMap(mapArr, blocksize*10, blocksize);
 		});
@@ -125,8 +129,8 @@ Written by Chris Rollins
 	function drawMap(map, placementOffset, blocksize)
 	{
 		var size = Math.sqrt(map.length);
-		var drawY = x;
-		var drawX = y;
+		var drawY = placementOffset;
+		var drawX = placementOffset;
 
 		back_ctx.fillStyle = "rgba(255, 255, 255, 1.0)";
 		back_ctx.fillRect(placementOffset, placementOffset, size*blocksize, size*blocksize);
@@ -247,7 +251,7 @@ Written by Chris Rollins
 				charContext.fillStyle = "rgba(0, 100, 255, 1.0)";
 				charContext.fillRect(mapOffset + visualX, mapOffset + visualY, blocksize, blocksize);
 
-				socket.emit("movement_request", {location: [50*newY+newX, this.facing()]}); 
+				socket.emit("movement_request", {location: [50*newY+newX, localPlayer.getFacing()]}); 
 			}
 			else
 			{
