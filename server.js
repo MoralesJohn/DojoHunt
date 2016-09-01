@@ -30,9 +30,9 @@ function findPlayer(socket){
 	}
 }
 
-function PlayerConstructor(socket){
+function PlayerConstructor(socketID){
 	var player = {};
-	player.id = socket.id;
+	player.id = socketID;
 	var start_pt = [];
 	var safe = false;
 	while (!safe){
@@ -60,32 +60,38 @@ var io = require('socket.io').listen(server);
 // })
 
 io.sockets.on('connection', function(socket){
-	players.push(PlayerConstructor(socket.id));
-	socket.emit('map', {'mapArr': mapArr});
-	socket.emit('all_players', {'players': players});
+
+	socket.emit('test', {'this': 'is a test'});
+	console.log("connected:", socket.id);
+	var player_constructor = PlayerConstructor(socket.id);
+	console.log(player_constructor);
+	players.push(player_constructor);
+
 	var ndex = players.length-1;
 	var new_player = players[ndex];
-	socket.emit('join_game', {'you': ndex});
+	console.log(players);
+	socket.emit('join_game', {'you': ndex, 'map': mapArr, 'players': players});
 	socket.broadcast.emit('new_player', {'ndex': ndex, 'player': new_player});
 
-	// console.log(socket.id);
-	// socket.emit('test', {foo:'bar'});
-	// socket.on('testing', function(data) {
-	// 	console.log('asdf', data);
-	io.sockets.on('name_change', function(data, socket){
+	socket.on('name_change', function(data){
 		player = findPlayer(socket);
 		players[player].name = data.name;
 		io.emit('new_name', {'ndex': player, 'name': data.name});
 	});
 
-	io.sockets.on('movement_request', function(data, socket){
+	socket.on('movement_request', function(data){
 		player = findPlayer(socket);
-		if (mapArr[data.location[0]]=0){
+		if (mapArr[data.location[0]]==0){
 			mapArr[players[player].location[0]] = 0;
 			mapArr[data.location[0]] = -1;
 			players[player].location = data.location;
 			io.emit('player_move', {'ndex': player, 'location': data.location});
 		}
+	});
+
+	socket.on('disconnect', function(data)
+	{
+		console.log("disconnected:", socket.id);
 	});
 });
 

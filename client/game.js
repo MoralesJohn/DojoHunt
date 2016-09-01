@@ -36,19 +36,17 @@ Written by Chris Rollins
 	function socketEvents()
 	{
 		socket = io.connect();
-		socket.on("map", function(data)
-		{
-			//console.log('map', data);
-			mapArr = data.mapArr;
-		});
 
-		socket.on("all_players", function(data)
-		{
-			players = data.players;
-		});
+		socket.on('test', function(data){
+			console.log('testin');
+		})
 
 		socket.on("join_game", function(data)
 		{
+			players = data.players;
+
+			mapArr = data.map;
+
 			var i = data.you;
 			var p = players[i];
 			var x = p.location[0] % 50;
@@ -63,11 +61,13 @@ Written by Chris Rollins
 
 		socket.on("player_move", function(data)
 		{
-			players[data[ndex]].location = data.location;
-			if(data[ndex] == localPlayer.ndex)
+			players[data.ndex].location = data.location;
+			if(data.ndex == localPlayer.ndex)
 			{
-				console.log(data[ndex], localPlayer.ndex);
-				localPlayer.position = data.location;
+				console.log(localPlayer.getPosition());
+				var x = data.location[0] % 50;
+				var y = Math.floor(data.location[0]/50);
+				localPlayer.setPosition([x, y]);
 				localPlayer.render();
 			}
 		});
@@ -167,6 +167,7 @@ Written by Chris Rollins
 		var charContext = charCanvas.getContext("2d");
 		var health = health;
 		var ammo = ammo;
+		var that = this;
 
 		document.getElementById("gameContainer").appendChild(charCanvas);
 
@@ -197,6 +198,11 @@ Written by Chris Rollins
 		this.getPosition = function()
 		{
 			return position;
+		};
+
+		this.setPosition = function(newPosition)
+		{
+			position = newPosition;
 		};
 
 		this.getName = function()
@@ -242,13 +248,13 @@ Written by Chris Rollins
 
 		this.render = function()
 		{
-			var visualX = (newX * blocksize) - (newX * blocksize)%blocksize;
-			var visualY = (newY * blocksize) - (newY * blocksize)%blocksize;
-			if(mapArr[50*newY+newX] == 0)
+			var visualX = (position[0] * blocksize) - (position[0] * blocksize)%blocksize;
+			var visualY = (position[1] * blocksize) - (position[1] * blocksize)%blocksize;
+			var size = Math.floor(Math.sqrt(mapArr.length));
+			if(mapArr[size*position[1]+position[0]] == 0)
 			{
 				clearCanvas(charCanvas);
 
-				position = [newX, newY];
 				charContext.fillStyle = "rgba(0, 100, 255, 1.0)";
 				charContext.fillRect(mapOffset + visualX, mapOffset + visualY, blocksize, blocksize);
 			}
@@ -260,16 +266,22 @@ Written by Chris Rollins
 			var visualY = (newY * blocksize) - (newY * blocksize)%blocksize;
 			var tempX = visualX;
 			var tempY = visualY;
+			var size = Math.floor(Math.sqrt(mapArr.length));
 			
-			if(mapArr[50*newY+newX] == 0)
+			if(mapArr[size*newY+newX] === 0)
 			{
-				socket.emit("movement_request", {location: [50*newY+newX, localPlayer.getFacing()]}); 
+				console.log("movement request to:", {location: [size*newY+newX, localPlayer.getFacing()]});
+				socket.emit("movement_request", {location: [size*newY+newX, localPlayer.getFacing()]}); 
 			}
 			else
 			{
+				console.log("collision");
 				charContext.fillStyle = "rgba(255, 0, 0, 1.0)";
 				charContext.fillRect(mapOffset + visualX, mapOffset + visualY, blocksize, blocksize);
-				setTimeout(function(){clearCanvas(charCanvas);},2000);
+				setTimeout(function()
+				{
+					that.render();
+				},2000);
 			}
 		}
 	}
