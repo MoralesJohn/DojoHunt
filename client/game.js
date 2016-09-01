@@ -14,17 +14,19 @@ Written by Chris Rollins
 	var lastpos = [0, 0];
 	var mouseIsDown = false;
 	var mapArr = [];
-	var blocksize = 13;
 	var keysdown = [false, false, false, false, false];
 	var background;
 	var back_ctx;
 	var charPos = [0,0];
-	var mapOffset = 70;
-	var moveLatency = 8;
 	var localPlayer;
 	var players = [];
 	var socket;
 	var waitingOnResources = true;
+
+	//  map globals
+	var blocksize = 13;
+	var moveLatency = 8;
+	var mapOffset = blocksize;
 
 	const DIRECTION_UP = 0;
 	const DIRECTION_RIGHT = 1;
@@ -298,7 +300,7 @@ Written by Chris Rollins
 				{
 					if(localPlayer !== undefined && mapArr.length > 0)
 					{
-						drawMap(mapArr, blocksize*1, blocksize);
+						drawMap(mapArr, mapOffset, blocksize);
 						localPlayer.init();
 						waitingOnResources = false;
 					}
