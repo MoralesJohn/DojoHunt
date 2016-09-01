@@ -11,6 +11,12 @@ app.use(bodyParser.urlencoded({extended: true}));
 
 require('./server/config/mongoose.js');
 // require('./server/config/routes.js')(app);
+app.get('/', function(req, res) {
+	res.redirect("/game.html");
+});
+app.listen(8000, function(){
+	console.log('DojoHunt listening port 8000.....');
+});
 
 io.sockets.on('connection', function(socket){
 	players.push(PlayerConstructor(socket.id));
@@ -18,7 +24,7 @@ io.sockets.on('connection', function(socket){
 	socket.emit('all_players', {'players': players});
 	var ndex = players.length-1;
 	var new_player = players[ndex];
-	socket.emit('join_game', {'you': new_player})
+	socket.emit('join_game', {'you': new_player});
 	socket.broadcast.emit('new_player', {'ndex': ndex, 'player': new_player});
 });
 
@@ -36,9 +42,6 @@ io.sockets.on('movement_request', function(data, socket){
 		players[player].location = data.location;
 		io.emit('player_move', {'ndex': player, 'location': data.location});
 	}
-});
-app.listen(8000, function(){
-	console.log('DojoHunt listening port 8000.....');
 });
 
 require('./server/gameback.js');

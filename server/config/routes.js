@@ -2,11 +2,11 @@
 // var products = require('./../controllers/products.js');
 // var orders = require('./../controllers/orders.js');
 //
-// module.exports = function(app){
-// 	app.get('/customers', function(req, res){
-// 		customers.show(req, res);
-// 	});
-//
+module.exports = function(app){
+	app.get('/', function(req, res){
+		res.render('game');
+	});
+
 // 	app.post('/addCustomer', function(req, res){
 // 		customers.add(req, res);
 // 	});
@@ -39,4 +39,4 @@
 // 		products.add(req, res);
 // 	});
 //
-// }
+}
