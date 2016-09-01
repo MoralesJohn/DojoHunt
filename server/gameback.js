@@ -6,9 +6,9 @@ mapArr = [0,0,0,0,1,0,1,0,1,1,0,1,0,0,1,0,0,1,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,
 
 
 function findPlayer(socket){
-	for (player of players){
-		if (player.id = socket.id){
-			return player;
+	for (var i = 0; i < players.length; i++){
+		if (players[i].id = socket.id){
+			return i;
 		}
 	}
 }

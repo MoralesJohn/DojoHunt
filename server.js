@@ -14,23 +14,27 @@ require('./server/config/mongoose.js');
 
 io.sockets.on('connection', function(socket){
 	players.push(PlayerConstructor(socket.id));
-	io.emit('map', {'mapArr': mapArr});
-	io.emit('all_players', {'players': players});
-	io.emit('new_player', player);
+	socket.emit('map', {'mapArr': mapArr});
+	socket.emit('all_players', {'players': players});
+	var ndex = players.length-1;
+	var new_player = players[ndex];
+	socket.emit('join_game', 'you': new_player)
+	socket.broadcast.emit('new_player', {'ndex': ndex, 'player': new_player});
 });
 
-io.sockets.on('name_change', function(socket){
+io.sockets.on('name_change', function(data, socket){
 	player = findPlayer(socket);
-	io.emit('new_name', player);
+	players[player].name = data.name;
+	io.emit('new_name', {'ndex': player, 'name': data.name});
 });
 
 io.sockets.on('movement_request', function(data, socket){
 	player = findPlayer(socket);
 	if (mapArr[data.location[0]]=0){
-		mapArr[player.location[0]] = 0;
+		mapArr[players[player].location[0]] = 0;
 		mapArr[data.location[0]] = -1;
-		player.location = data.location;
-		io.emit('player_move', player);
+		players[player].location = data.location;
+		io.emit('player_move', {'ndex': player, 'location': data.location});
 	}
 });
 app.listen(8000, function(){
