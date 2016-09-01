@@ -137,13 +137,15 @@
 		c.getContext("2d").putImageData(pixels, 0, 0);
 	}
 
-	function Character(startX, startY)
+	function Character(startX, startY, health, ammo)
 	{
 		var position = [0, 0]; //The getter returns an object {x: xval, y: yval}
 		var facing = [1, 0];
 		var name = "";
 		var charCanvas = document.getElementById("localplayer_canvas");
 		var charContext = charCanvas.getContext("2d");
+		var health = health;
+		var ammo = ammo;
 
 		document.getElementById("gameContainer").appendChild(charCanvas);
 
@@ -231,6 +233,7 @@
 				position = [newX, newY];
 				charContext.fillStyle = "rgba(0, 100, 255, 1.0)";
 				charContext.fillRect(mapOffset + visualX, mapOffset + visualY, blocksize, blocksize);
+				//send via socket: position as mapArr[50*newY+newX], and facing as string
 			}
 			else
 			{
