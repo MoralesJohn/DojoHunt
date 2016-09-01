@@ -18,7 +18,7 @@ io.sockets.on('connection', function(socket){
 	socket.emit('all_players', {'players': players});
 	var ndex = players.length-1;
 	var new_player = players[ndex];
-	socket.emit('join_game', 'you': new_player)
+	socket.emit('join_game', {'you': new_player})
 	socket.broadcast.emit('new_player', {'ndex': ndex, 'player': new_player});
 });
 
