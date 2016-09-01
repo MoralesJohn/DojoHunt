@@ -12,7 +12,7 @@ app.use(bodyParser.json());
 require('./server/config/mongoose.js');
 require('./server/config/routes.js')(app);
 app.listen(8000, function(){
-	console.log('listening port 8000.....');
+	console.log('DojoHunt listening port 8000.....');
 });
 
 require('./server/gameback.js');
