@@ -42,7 +42,6 @@ Written by Chris Rollins
 		{
 			console.log('map', data);
 			mapArr = data.mapArr;
-			drawMap(mapArr, blocksize*10, blocksize);
 		});
 
 		socket.on("all_players", function(data)
@@ -53,7 +52,9 @@ Written by Chris Rollins
 		socket.on("join_game", function(data)
 		{
 			var p = data.you;
-			localPlayer = new Character(p.location[0], p.location[1], p.health, p.ammo, p.name);
+			var x = p.location[0] % 50;
+			var y = Math.floor(p.location[0]/50);
+			localPlayer = new Character(x, y, p.health, p.ammo, p.name);
 		});
 
 		socket.on("new_player", function(data)
@@ -141,7 +142,7 @@ Written by Chris Rollins
 		{
 			if(i%size == 0 && i >= size)
 				drawY+=blocksize;
-			if(map[i])
+			if(map[i] === 1)
 				back_ctx.fillRect(drawX + (i%size)*blocksize, drawY, blocksize, blocksize);
 		}
 	}
@@ -166,12 +167,13 @@ Written by Chris Rollins
 
 		charCanvas.width = window.innerWidth;
 		charCanvas.height = window.innerHeight;
-
+		clearCanvas(charCanvas);
 
 		this.busy = 0;
 		
 		this.init = function()
 		{
+			console.log(position);
 			placeCharacter(position[0], position[1], true);
 		};
 
@@ -296,7 +298,7 @@ Written by Chris Rollins
 				{
 					if(localPlayer !== undefined && mapArr.length > 0)
 					{
-						drawMap(mapArr, blocksize*10, blocksize);
+						drawMap(mapArr, blocksize*1, blocksize);
 						localPlayer.init();
 						waitingOnResources = false;
 					}

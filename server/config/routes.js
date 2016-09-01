@@ -4,7 +4,7 @@
 //
 module.exports = function(app){
 	app.get('/', function(req, res){
-		res.render('game');
+		res.render('index');
 	});
 
 // 	app.post('/addCustomer', function(req, res){
