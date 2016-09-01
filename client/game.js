@@ -1,5 +1,13 @@
+/*
+game.js
+Client side game engine for Dojo Hunt.
+Written by Chris Rollins
+*/
+
+//Everything is inside this immediately invoked function in order to hide it from the browser DOM.
 (function()
 {	
+	//globals
 	var script;
 	var canvas;
 	var ctx;
@@ -7,13 +15,58 @@
 	var mouseIsDown = false;
 	var mapArr = [];
 	var blocksize = 13;
-	var keysdown = {up: false, left: false, down: false, right: false};
+	var keysdown = [false, false, false, false, false];
 	var background;
 	var back_ctx;
 	var charPos = [0,0];
 	var mapOffset = 70;
 	var moveLatency = 8;
 	var localPlayer;
+	var players = [];
+	var socket;
+	var waitingOnResources = true;
+
+	const DIRECTION_UP = 0;
+	const DIRECTION_RIGHT = 1;
+	const DIRECTION_DOWN = 2;
+	const DIRECTION_LEFT = 3;
+
+	function socketEvents()
+	{
+		socket = io.connect();
+
+		socket.on("map", function(data)
+		{
+			mapArr = data.mapArr;
+			drawMap(mapArr, blocksize*10, blocksize);
+		});
+
+		socket.on("all_players", function(data)
+		{
+			players = data.players;
+		});
+
+		socket.on("join_game", function(data)
+		{
+			var p = data.you;
+			localPlayer = new Character(p.location[0], p.location[1], p.health, p.ammo, p.name);
+		});
+
+		socket.on("new_player", function(data)
+		{
+			players[data[ndex]] = data.player;
+		});
+
+		socket.on("player_move", function(data)
+		{
+			players[data[ndex]].location = data.location;
+		});
+
+		socket.on("new_name", function(data)
+		{
+			players[data[ndex]].name = data.name;
+		});
+	}
 	
 	function checkKeyCode(k)
 	{
@@ -21,18 +74,18 @@
 			{
 				case 87:
 				case 38:
-					return "up";
+					return DIRECTION_UP;
 				case 65:
 				case 37:
-					return "left";
+					return DIRECTION_LEFT;
 				case 83:
 				case 40:
-					return "down";
+					return DIRECTION_DOWN;
 				case 68:
 				case 39:
-					return "right";
+					return DIRECTION_RIGHT;
 			}
-		return "nokey";
+		return 4;
 	}
 
 	function initEvents()
@@ -111,14 +164,14 @@
 		return newMap;
 	}
 
-	function drawMap(map, x, y, blocksize)
+	function drawMap(map, placementOffset, blocksize)
 	{
 		var size = Math.sqrt(map.length);
 		var drawY = x;
 		var drawX = y;
 
 		back_ctx.fillStyle = "rgba(255, 255, 255, 1.0)";
-		back_ctx.fillRect(x, y, size*blocksize, size*blocksize);
+		back_ctx.fillRect(placementOffset, placementOffset, size*blocksize, size*blocksize);
 
 		back_ctx.fillStyle = "rgba(0, 0, 0, 1.0)";
 
@@ -137,11 +190,11 @@
 		c.getContext("2d").putImageData(pixels, 0, 0);
 	}
 
-	function Character(startX, startY, health, ammo)
+	function Character(startX, startY, health, ammo, name)
 	{
-		var position = [0, 0]; //The getter returns an object {x: xval, y: yval}
+		var position = [startX, startY]; //The getter returns an object {x: xval, y: yval}
 		var facing = [1, 0];
-		var name = "";
+		var name = name;
 		var charCanvas = document.getElementById("localplayer_canvas");
 		var charContext = charCanvas.getContext("2d");
 		var health = health;
@@ -152,9 +205,13 @@
 		charCanvas.width = window.innerWidth;
 		charCanvas.height = window.innerHeight;
 
-		placeCharacter(startX, startY, true);
 
 		this.busy = 0;
+		
+		this.init = function()
+		{
+			placeCharacter(position[0], position[1], true);
+		};
 
 		this.moveForward = function()
 		{
@@ -168,7 +225,7 @@
 
 		this.getPosition = function()
 		{
-			return {x: position[0], y: position[1]};
+			return position;
 		};
 
 		this.getName = function()
@@ -184,31 +241,29 @@
 		this.getFacing = function()
 		{
 			if(facing[0] == 0 && facing[1] == 1)
-				return "down";
+				return DIRECTION_DOWN;
 			else if(facing[0] == 1 && facing[1] == 0)
-				return "right";
+				return DIRECTION_RIGHT;
 			else if(facing[0] == 0 && facing[1] == -1)
-				return "up";
+				return DIRECTION_UP;
 			else if(facing[0] == -1 && facing[1] == 0)
-				return "left";
+				return DIRECTION_LEFT;
 		};
 
-		//takes a string for a cardinal direction. "right", "up", "left", or "down"
-		//an invalid input will not change the data, and it will console log an error.
 		this.setFacing = function(newFacing)
 		{
-			switch(newFacing.toLowerCase())
+			switch(newFacing)
 			{
-				case "right":
+				case DIRECTION_RIGHT:
 					facing = [1, 0];
 					break;
-				case "up":
+				case DIRECTION_UP:
 					facing = [0, -1];
 					break;
-				case "left":
+				case DIRECTION_LEFT:
 					facing = [-1, 0];
 					break;
-				case "down":
+				case DIRECTION_DOWN:
 					facing = [0, 1];
 					break;
 			}
@@ -233,7 +288,8 @@
 				position = [newX, newY];
 				charContext.fillStyle = "rgba(0, 100, 255, 1.0)";
 				charContext.fillRect(mapOffset + visualX, mapOffset + visualY, blocksize, blocksize);
-				//send via socket: position as mapArr[50*newY+newX], and facing as string
+
+				socket.emit("movement_request", {location: [50*newY+newX, this.facing()]}); 
 			}
 			else
 			{
@@ -264,44 +320,46 @@
 			back_ctx.strokeStyle = "#000000";
 			back_ctx.fillStyle = "#000000";
 
+			//Register all the events after setting up canvases
 			initEvents();
-
-			mapArr = makeMap(50, 300);
-			drawMap(mapArr, mapOffset, mapOffset, blocksize);
-
-			localPlayer = new Character(1, 1);
+			
+			//Initiate the socket connection and set up socket events after setting up all the local stuff
+			socketEvents();
 
 			//game loop
+			var delay;
 			setInterval(function()
 			{
-				if(keysdown.up)
+				if(waitingOnResources)
 				{
-					localPlayer.setFacing("up");
-					localPlayer.moveForward();
-				}
-				if(keysdown.left)
-				{
-					localPlayer.setFacing("left");
-					localPlayer.moveForward();
-				}
-				if(keysdown.down)
-				{
-					localPlayer.setFacing("down");
-					localPlayer.moveForward();
-				}
-				if(keysdown.right)
-				{
-					localPlayer.setFacing("right");
-					localPlayer.moveForward();
-				}
-				
-				if(localPlayer.busy > 0)
-				{
-					localPlayer.busy--;
+					if(localPlayer !== undefined && mapArr.length > 0)
+					{
+						drawMap(mapArr, blocksize*10, blocksize);
+						localPlayer.init();
+						waitingOnResources = false;
+					}
 				}
 				else
 				{
-					localPlayer.busy += moveLatency;
+					delay = 0;
+					for(var direction = 0; direction < 4; direction++)
+					{
+						if(keysdown[direction])
+						{
+							localPlayer.setFacing(direction);
+							localPlayer.moveForward();
+							delay += moveLatency;
+						}
+					}
+				
+					if(localPlayer.busy > 0)
+					{
+						localPlayer.busy--;
+					}
+					else
+					{
+						localPlayer.busy += delay;
+					}
 				}
 			}, 10);
 		}
