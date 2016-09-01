@@ -122,48 +122,6 @@ Written by Chris Rollins
 		}
 	}
 
-	function makeMap(size, numBlocks)
-	{
-		var newMap = [];
-		var i;
-		var spot = Math.floor(Math.random()*size*size);
-		var streak = 0;
-		var streakSize = (Math.random()+0.1)*0.1*numBlocks;
-
-		if(streakSize > 0.06*numBlocks)
-			streakSize = Math.floor(0.06*numBlocks);
-
-		for(i = 0; i < size*size; i++)
-		{
-			if(i < size || i >= (size*size - size) || i%size == 0 || i%(size) == (size-1) )
-			{
-				newMap[i] = true;
-			}
-			else
-			{
-				newMap[i] = false;
-			}
-		}
-
-		for(i = 0; i < numBlocks; i++)
-		{
-			if(streak < streakSize)
-			{
-				streak++;
-				spot++;
-			}
-			else
-			{
-				streak = 0;
-				streakSize--;
-				spot = Math.floor(Math.random()*size*size);
-			}
-			newMap[spot] = true;
-		}
-
-		return newMap;
-	}
-
 	function drawMap(map, placementOffset, blocksize)
 	{
 		var size = Math.sqrt(map.length);
@@ -281,7 +239,7 @@ Written by Chris Rollins
 				ignoreCollision = false;
 			}
 			
-			if(mapArr[50*newY+newX] == false || ignoreCollision === true)
+			if(mapArr[50*newY+newX] == 0 || ignoreCollision === true)
 			{
 				clearCanvas(charCanvas);
 
