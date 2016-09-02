@@ -44,6 +44,17 @@
 	width: 30%;
 	height: 100%;
 	background-color: #aaa;
+	background-image: url(crosshair4.png);
+}
+#statusContainer
+{
+	width: 280px;
+	background-color: #cbcbcb;
+	border-style: double;
+	border-radius: 10px;
+	border-color: black;
+	border-width: 2px;
+	padding: 20px;
 }
 #cdstatus1, #cdstatus2
 {
