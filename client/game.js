@@ -58,8 +58,6 @@ Written by Chris Rollins
 
 			var i = data.you;
 			var p = players[i];
-			// var x = p.location[0] % 50;
-			// var y = Math.floor(p.location[0]/50);
 			var point = mapArrIndexToPoint(p.location[0]);
 			localPlayer = new Character(point[0], point[1], p.health, p.ammo, p.name, i);
 		});
@@ -70,22 +68,22 @@ Written by Chris Rollins
 			var p;
 			var vx;
 			var vy;
-			clearCanvas(canvas);
-			for(var i in players)
-			{
-				if(players[i].dead !== true)
-				{
-					loc = players[i].location;
-					if(loc !== undefined)
-					{
-						p = mapArrIndexToPoint(loc[0]);
-						vx = (p[0] * blocksize) - (p[0] * blocksize)%blocksize;
-						vy = (p[1] * blocksize) - (p[1] * blocksize)%blocksize;
-						drawPlayer(vx, vy, "rgba(0, 100, 255, 1.0)", "rgba(255, 0, 0, 1.0)", ctx, i);
-					}
-				}
-			}
 			players[data.ndex] = data.player;
+			//clearCanvas(canvas);
+			// for(var i in players)
+			// {
+			// 	if(players[i].dead !== true)
+			// 	{
+			// 		loc = players[i].location;
+			// 		if(loc !== undefined && i != localPlayer.ndex)
+			// 		{
+			// 			p = mapArrIndexToPoint(loc[0]);
+			// 			vx = (p[0] * blocksize) - (p[0] * blocksize)%blocksize;
+			// 			vy = (p[1] * blocksize) - (p[1] * blocksize)%blocksize;
+			// 			drawPlayer(vx, vy, "rgba(0, 100, 255, 1.0)", "rgba(255, 0, 0, 1.0)", ctx, i);
+			// 		}
+			// 	}
+			// }
 		});
 
 		socket.on("player_move", function(data)
@@ -110,21 +108,21 @@ Written by Chris Rollins
 				var p = mapArrIndexToPoint(loc[0]);
 				var vx = (p[0] * blocksize) - (p[0] * blocksize)%blocksize;
 				var vy = (p[1] * blocksize) - (p[1] * blocksize)%blocksize;
-				clearCanvas(canvas);
-				for(var i in players)
-				{
-					if(players[i].dead !== true)
-					{
-						loc = players[i].location;
-						if(loc !== undefined && i != localPlayer.ndex)
-						{
-							p = mapArrIndexToPoint(loc[0]);
-							vx = (p[0] * blocksize) - (p[0] * blocksize)%blocksize;
-							vy = (p[1] * blocksize) - (p[1] * blocksize)%blocksize;
-							drawPlayer(vx, vy, "rgba(0, 100, 255, 1.0)", "rgba(255, 0, 0, 1.0)", ctx, i);
-						}
-					}
-				}
+				// clearCanvas(canvas);
+				// for(var i in players)
+				// {
+				// 	if(players[i].dead !== true)
+				// 	{
+				// 		loc = players[i].location;
+				// 		if(loc !== undefined && i != localPlayer.ndex)
+				// 		{
+				// 			p = mapArrIndexToPoint(loc[0]);
+				// 			vx = (p[0] * blocksize) - (p[0] * blocksize)%blocksize;
+				// 			vy = (p[1] * blocksize) - (p[1] * blocksize)%blocksize;
+				// 			drawPlayer(vx, vy, "rgba(0, 100, 255, 1.0)", "rgba(255, 0, 0, 1.0)", ctx, i);
+				// 		}
+				// 	}
+				// }
 			}
 
 		});
@@ -132,11 +130,11 @@ Written by Chris Rollins
 		socket.on("shot_fired", function(data)
 		{
 			//{shootingPlayerIndex: this.ndex, shotStartPosition: pointToMapArrIndex(from), shotRange: range, shotFacing: ff, type: powerType}
-			var p;
+			var p = data.shotStartPosition;
 			var pp = mapArrIndexToPoint(p);
 			pp[0] = pp[0] * blocksize + mapOffset;
 			pp[1] = pp[1] * blocksize + mapOffset;
-			var f;
+			var f = data.shotFacing;
 			var ff;
 			switch(f)
 			{
@@ -153,8 +151,7 @@ Written by Chris Rollins
 					ff = [0, 1];
 					break;
 			}
-
-			localPlayer.powerVisualFunctions[data["type"]](pp, ff);
+			localPlayer.powerVisualFunctions[data.type](pp, ff);
 		});
 
 		socket.on("successful_attack", function(data)
@@ -174,21 +171,21 @@ Written by Chris Rollins
 			var p;
 			var vx;
 			var vy;
-			clearCanvas(canvas);
-			for(var i in players)
-			{
-				if(players[i].dead !== true)
-				{
-					loc = players[i].location;
-					if(loc !== undefined)
-					{
-						p = mapArrIndexToPoint(loc[0]);
-						vx = (p[0] * blocksize) - (p[0] * blocksize)%blocksize;
-						vy = (p[1] * blocksize) - (p[1] * blocksize)%blocksize;
-						drawPlayer(vx, vy, "rgba(0, 100, 255, 1.0)", "rgba(255, 0, 0, 1.0)", ctx, i);
-					}
-				}
-			}
+			// clearCanvas(canvas);
+			// for(var i in players)
+			// {
+			// 	if(players[i].dead !== true)
+			// 	{
+			// 		loc = players[i].location;
+			// 		if(loc !== undefined && i != localPlayer.ndex)
+			// 		{
+			// 			p = mapArrIndexToPoint(loc[0]);
+			// 			vx = (p[0] * blocksize) - (p[0] * blocksize)%blocksize;
+			// 			vy = (p[1] * blocksize) - (p[1] * blocksize)%blocksize;
+			// 			drawPlayer(vx, vy, "rgba(0, 100, 255, 1.0)", "rgba(255, 0, 0, 1.0)", ctx, i);
+			// 		}
+			// 	}
+			// }
 		});
 	}
 	
@@ -449,7 +446,7 @@ Written by Chris Rollins
 			if(facing === undefined)
 				f = facing;
 			if(powerType === undefined)
-				powerType = 0;
+				powerType = POWER_BASIC_SHOT;
 
 			var ff;
 
@@ -563,6 +560,7 @@ Written by Chris Rollins
 			function basicShotVisualEffect(p, f)
 			{
 				effects_ctx.fillStyle = "rgba(255, 0, 0, 1.0)";
+				//console.log(p, f);
 				effects_ctx.fillRect(mapOffset + (p[0] + f[0]) * blocksize + Math.floor(blocksize/4), mapOffset + (p[1] + f[1]) * blocksize + Math.floor(blocksize/4), Math.floor(blocksize/2), Math.floor(blocksize/2));
 				setTimeout(function()
 				{
@@ -721,6 +719,26 @@ Written by Chris Rollins
 					{
 						localPlayer.lockMovement += delay;
 					}
+
+					var loc;
+					var p;
+					var vx;
+					var vy;
+					clearCanvas(canvas);
+					for(var i in players)
+					{
+						if(players[i].dead !== true)
+						{
+							loc = players[i].location;
+							if(loc !== undefined && i !== localPlayer.ndex)
+							{
+								p = mapArrIndexToPoint(loc[0]);
+								vx = (p[0] * blocksize) - (p[0] * blocksize)%blocksize;
+								vy = (p[1] * blocksize) - (p[1] * blocksize)%blocksize;
+								drawPlayer(vx, vy, "rgba(0, 100, 255, 1.0)", "rgba(255, 0, 0, 1.0)", ctx, i);
+							}
+						}
+					}
 				}
 				else //player is dead
 				{
@@ -728,8 +746,11 @@ Written by Chris Rollins
 					{
 						document.getElementById("deadcd").innerHTML = deathTimer/100;
 					}
-					deathTimer--;
-					if(deathTimer < 1)
+					if(deathTimer > 0)
+					{
+						deathTimer--;
+					}
+					else
 						window.location.reload(true);
 				}
 			}, 10);
