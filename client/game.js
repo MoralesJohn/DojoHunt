@@ -78,7 +78,6 @@ Written by Chris Rollins
 				var vy = (y * blocksize) - (y * blocksize)%blocksize;
 				clearCanvas(canvas);
 				drawPlayer(vx, vy, "rgba(0, 100, 255, 1.0)", "rgba(255, 0, 0, 1.0)", ctx, data.ndex);
-				mapArr[loc[0]] = -1;
 			}
 		});
 
@@ -132,7 +131,7 @@ Written by Chris Rollins
 
 		document.onkeydown = function(e)
 		{
-			//console.log(e.keyCode);
+			console.log(e.keyCode);
 			keysdown[checkKeyCode(e.keyCode)] = true; 
 		}
 
@@ -261,11 +260,8 @@ Written by Chris Rollins
 			var visualX = (position[0] * blocksize) - (position[0] * blocksize)%blocksize;
 			var visualY = (position[1] * blocksize) - (position[1] * blocksize)%blocksize;
 			var size = Math.floor(Math.sqrt(mapArr.length));
-			if(mapArr[size*position[1]+position[0]] == 0)
-			{
-				clearCanvas(charCanvas);
-				drawPlayer(visualX, visualY, "rgba(0, 100, 255, 1.0)", "rgba(0, 100, 255, 1.0)", charContext, this.ndex);
-			}
+			clearCanvas(charCanvas);
+			drawPlayer(visualX, visualY, "rgba(0, 100, 255, 1.0)", "rgba(0, 100, 255, 1.0)", charContext, this.ndex);
 		};
 
 		function requestPosition(newX, newY)
