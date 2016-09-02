@@ -37,10 +37,6 @@ Written by Chris Rollins
 	{
 		socket = io.connect();
 
-		socket.on('test', function(data){
-			console.log('testin');
-		})
-
 		socket.on("join_game", function(data)
 		{
 			players = data.players;
@@ -255,8 +251,9 @@ Written by Chris Rollins
 			{
 				clearCanvas(charCanvas);
 
-				charContext.fillStyle = "rgba(0, 100, 255, 1.0)";
-				charContext.fillRect(mapOffset + visualX, mapOffset + visualY, blocksize, blocksize);
+				// charContext.fillStyle = "rgba(0, 100, 255, 1.0)";
+				// charContext.fillRect(mapOffset + visualX, mapOffset + visualY, blocksize, blocksize);
+				drawPlayer(visualX, visualY, "rgba(0, 100, 255, 1.0)", "rgba(200, 200, 255, 1.0)", charContext);
 			}
 		};
 
@@ -283,6 +280,38 @@ Written by Chris Rollins
 					that.render();
 				},2000);
 			}
+		}
+		
+		//Used by the render function.
+		//This function only provides the appearance of the player.
+		drawPlayer(x, y, outlineColor, fillColor, context)
+		{
+			if(outlineColor === undefined)
+				color = "#000000";
+			if(fillColor === undefined)
+				color = "#0055ff";
+
+			var short = blocksize/3;
+
+			var triangles =
+			[
+				[[x + short, y + blocksize/2], [x, y - blocksize/2], [x + short, y + blocksize/2]],
+				[[x + blocksize/2, y], [x - blocksize/2, y - short], [x - blocksize/2, y + short]],
+				[[x - short, y - blocksize/2], [x, y+blocksize/2], [x - blocksize/2, y + short]],
+				[[x + blocksize/2, y + short], [x - blocksize/2, y], [x + blocksize/2, y - short]]
+			]
+
+			context.strokeStyle = outlineColor;
+			context.fillStyle = fillColor;
+
+			context.beginPath();
+			for(var p in triangle[that.getFacing()])
+			{
+				context.moveTo(p[i][0], p[i][1]);
+				context.lineTo(p[i][0], p[i][1]);
+			}
+			context.closePath();
+			context.fill();
 		}
 	}
 
@@ -348,27 +377,6 @@ Written by Chris Rollins
 					}
 				}
 			}, 10);
-		}
-
-		this.drawPixel = function(x, y, color)
-		{
-			newPixel = ctx.createImageData(1, 1);
-			newPixel.data[3] = 255;
-			ctx.putImageData(newPixel, x, y);
-		}
-
-		this.drawLine = function(x1, y1, x2, y2, color)
-		{
-			if(color === undefined)
-				color = "#000000";
-
-			ctx.strokeStyle = color;
-
-			ctx.beginPath();
-			ctx.moveTo(x1, y1);
-			ctx.lineTo(x2, y2);
-			ctx.closePath();
-			ctx.stroke();
 		}
 	}
 
