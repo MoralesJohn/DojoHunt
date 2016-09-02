@@ -64,7 +64,6 @@ Written by Chris Rollins
 			//Player is the local player
 			if(data.ndex == localPlayer.ndex)
 			{
-				console.log(localPlayer.getPosition());
 				var x = data.location[0] % 50;
 				var y = Math.floor(data.location[0]/50);
 				localPlayer.setPosition([x, y]);
@@ -103,6 +102,8 @@ Written by Chris Rollins
 				case 68:
 				case 39:
 					return DIRECTION_RIGHT;
+				//case 32:
+				//space
 			}
 		return 4;
 	}
@@ -131,7 +132,7 @@ Written by Chris Rollins
 
 		document.onkeydown = function(e)
 		{
-			console.log(e.keyCode);
+			//console.log(e.keyCode);
 			keysdown[checkKeyCode(e.keyCode)] = true; 
 		}
 
@@ -139,6 +140,11 @@ Written by Chris Rollins
 		{
 			keysdown[checkKeyCode(e.keyCode)] = false; 
 		}
+	}
+
+	function shoot()
+	{
+
 	}
 
 	function drawMap(map, placementOffset, blocksize)
@@ -276,7 +282,6 @@ Written by Chris Rollins
 			
 			if(mapArr[size*newY+newX] === 1)
 			{
-				console.log("collision:", mapArr[size*newY+newX]);
 				charContext.fillStyle = "rgba(255, 0, 0, 1.0)";
 				charContext.fillRect(mapOffset + visualX, mapOffset + visualY, blocksize, blocksize);
 				setTimeout(function()
@@ -319,7 +324,6 @@ Written by Chris Rollins
 		context.moveTo(t[0][0], t[0][1]);
 		for(var p in t)
 		{
-			console.log(t[p][0], t[p][1]);
 			context.lineTo(t[p][0], t[p][1]);
 		}
 		context.closePath();
