@@ -72,7 +72,16 @@
 	top:40%;
 	left: 30%;
 	z-index: 10;
+}
+#dead
+{
 	font-weight: bold;
 	font-size: 140px;
 	color: rgba(255, 50, 50, 0.95);
+}
+#deadcd
+{
+	font-weight: bold;
+	font-size: 50px;
+	color: rgba(100, 100, 255, 0.95);
 }
