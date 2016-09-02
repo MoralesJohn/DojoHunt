@@ -4,7 +4,7 @@ Client side game engine for Dojo Hunt.
 Written by Chris Rollins
 */
 
-//Everything is inside this immediately invoked function in order to hide it from the browser DOM.
+
 (function()
 {	
 	//globals
@@ -12,9 +12,9 @@ Written by Chris Rollins
 	var mouseIsDown = false;
 	var mapArr = [];
 	var keysdown = [false, false, false, false, false];
-	var charPos = [0,0];
 	var localPlayer;
 	var players = [];
+	var positionPlayers = [];
 	var socket;
 	var waitingOnResources = true;
 
@@ -28,11 +28,22 @@ Written by Chris Rollins
 	var back_ctx;
 	var canvas;
 	var ctx;
+	var effectsCanvas;
+	var effects_ctx;
 
 	const DIRECTION_UP = 0;
 	const DIRECTION_RIGHT = 1;
 	const DIRECTION_DOWN = 2;
 	const DIRECTION_LEFT = 3;
+
+	const POWER_BASIC_SHOT = 4;
+	const POWER_TELEPORT = 5;
+	const CUSTOM_POWER_1 = 6;
+	const CUSTOM_POWER_2 = 7;
+	const CUSTOM_POWER_3 = 8;
+	const CUSTOM_POWER_4 = 9;
+	const CUSTOM_POWER_5 = 10;
+	const CUSTOM_POWER_6 = 11;
 
 	function socketEvents()
 	{
@@ -46,9 +57,10 @@ Written by Chris Rollins
 
 			var i = data.you;
 			var p = players[i];
-			var x = p.location[0] % 50;
-			var y = Math.floor(p.location[0]/50);
-			localPlayer = new Character(x, y, p.health, p.ammo, p.name, i);
+			// var x = p.location[0] % 50;
+			// var y = Math.floor(p.location[0]/50);
+			var point = mapArrIndexToPoint(p.location[0]);
+			localPlayer = new Character(point[0], point[1], p.health, p.ammo, p.name, i);
 		});
 
 		socket.on("new_player", function(data)
@@ -58,31 +70,32 @@ Written by Chris Rollins
 
 		socket.on("player_move", function(data)
 		{
-			loc = data.location;
+			var loc = data.location;
+			var oldloc = players[data.ndex].location[0];
+			positionPlayers[oldloc] = 0;
+			positionPlayers[loc[0]] = players[data.ndex];
 			players[data.ndex].location = loc;
 
 			//Player is the local player
 			if(data.ndex == localPlayer.ndex)
 			{
-				var x = data.location[0] % 50;
-				var y = Math.floor(data.location[0]/50);
-				localPlayer.setPosition([x, y]);
+				var point = mapArrIndexToPoint(loc[0]);
+				localPlayer.setPosition([point[0], point[1]]);
 				localPlayer.render();
 			}
 			else //otherwise render it on the enemy player canvas
 			{
-				var x = (loc[0] % 50);
-				var y = (Math.floor(loc[0]/50));
-				var vx = (x * blocksize) - (x * blocksize)%blocksize;
-				var vy = (y * blocksize) - (y * blocksize)%blocksize;
+				var p = mapArrIndexToPoint(loc[0]);
+				var vx = (p[0] * blocksize) - (p[0] * blocksize)%blocksize;
+				var vy = (p[1] * blocksize) - (p[1] * blocksize)%blocksize;
 				clearCanvas(canvas);
 				drawPlayer(vx, vy, "rgba(0, 100, 255, 1.0)", "rgba(255, 0, 0, 1.0)", ctx, data.ndex);
 			}
 		});
 
-		socket.on("new_name", function(data)
+		socket.on("damage", function(data)
 		{
-			players[data[ndex]].name = data.name;
+			document.getElementById("healthbar-inner").width = localPlayer.health * 40;
 		});
 	}
 	
@@ -102,10 +115,24 @@ Written by Chris Rollins
 				case 68:
 				case 39:
 					return DIRECTION_RIGHT;
-				//case 32:
-				//space
+				case 32:
+					return POWER_BASIC_SHOT;
+				case 90:
+					return POWER_TELEPORT;
+				case 88:
+					return CUSTOM_POWER_1;
+				case 67:
+					return CUSTOM_POWER_2;
+				case 86:
+					return CUSTOM_POWER_3;
+				case 66:
+					return CUSTOM_POWER_4;
+				case 78:
+					return CUSTOM_POWER_5;
+				case 77:
+					return CUSTOM_POWER_6;
 			}
-		return 4;
+		return -1;
 	}
 
 	function initEvents()
@@ -142,9 +169,20 @@ Written by Chris Rollins
 		}
 	}
 
-	function shoot()
-	{
+	//takes an array [x, y] as a point and returns the corresponding index in the map array
+	function pointToMapArrIndex(point)
+	{	
+		var size = Math.floor(Math.sqrt(mapArr.length));
+		//size*newY+newX
+		return (point[1] * size + point[0]);
+	}
 
+	function mapArrIndexToPoint(index)
+	{
+		var size = Math.floor(Math.sqrt(mapArr.length));
+		var x = (index % size);
+		var y = (Math.floor(index/size));
+		return [x, y];
 	}
 
 	function drawMap(map, placementOffset, blocksize)
@@ -182,7 +220,7 @@ Written by Chris Rollins
 		var charContext = charCanvas.getContext("2d");
 		var health = health;
 		var ammo = ammo;
-		var that = this;
+		var me = this;
 
 		document.getElementById("gameContainer").appendChild(charCanvas);
 
@@ -190,7 +228,7 @@ Written by Chris Rollins
 		charCanvas.height = window.innerHeight;
 		clearCanvas(charCanvas);
 
-		this.busy = 0;
+		this.lockMovement = 0;
 
 		this.ndex = ndex;
 		
@@ -200,9 +238,30 @@ Written by Chris Rollins
 			requestPosition(position[0], position[1]);
 		};
 
+		this.getHealth = function()
+		{
+			return health;
+		}
+
+		this.injure = function()
+		{
+			health--;
+			var arr = ["1px", "40px", "80px", "120px"];
+			var str = arr[health];
+			var color;
+			
+			if(health < 0)
+			{
+				//death
+				str = "0px";
+			}
+
+			document.getElementById("healthbar-inner").style.width = str;
+		}
+
 		this.moveForward = function()
 		{
-			if(!this.busy)
+			if(!this.lockMovement)
 			{
 				var x = position[0] + facing[0];
 				var y = position[1] + facing[1];
@@ -242,6 +301,11 @@ Written by Chris Rollins
 				return DIRECTION_LEFT;
 		};
 
+		this.getRawFacing = function()
+		{
+			return facing;
+		};
+
 		this.setFacing = function(newFacing)
 		{
 			switch(newFacing)
@@ -261,6 +325,7 @@ Written by Chris Rollins
 			}
 		};
 
+		//renders the local player on the canvas
 		this.render = function()
 		{
 			var visualX = (position[0] * blocksize) - (position[0] * blocksize)%blocksize;
@@ -270,6 +335,109 @@ Written by Chris Rollins
 			drawPlayer(visualX, visualY, "rgba(0, 100, 255, 1.0)", "rgba(0, 100, 255, 1.0)", charContext, this.ndex);
 		};
 
+		//A building block for any damaging attack power.
+		//The simplest use is just an instant line attack
+		//However, this function can be called multiple times using loops along with conditionals and delays to create unique powers.
+		//takes array [x2, y2] for from and a number for range
+		//power type only affects visuals. leave blank for default shot.
+		this.attack = function(from, range, f, powerType)
+		{
+			if(facing === undefined)
+				f = facing;
+			if(powerType === undefined)
+				powerType = 0;
+
+			var ff;
+
+			if(f[0] == 0 && f[1] == 1)
+				ff = DIRECTION_DOWN;
+			else if(f[0] == 1 && f[1] == 0)
+				ff = DIRECTION_RIGHT;
+			else if(f[0] == 0 && f[1] == -1)
+				ff = DIRECTION_UP;
+			else if(f[0] == -1 && f[1] == 0)
+				ff = DIRECTION_LEFT;
+
+			socket.emit("shots_fired", {shootingPlayerIndex: this.ndex, shotStartPosition: pointToMapArrIndex(from), shotRange: range, shotFacing: ff, type: powerType});
+		};
+
+		//uh its complicated lol
+		this.powers =
+		[undefined, undefined, undefined, undefined, //like seriously I cant even believe I'm dong this
+			
+			//basic shot
+			//A simple ranged shot. An example of how the attack method can be used.
+			{
+				power: function()
+				{
+					var thisPower = me.powers[POWER_BASIC_SHOT];
+					var shotProgress = 100 - thisPower.countdown;
+					var newpos;
+					if(thisPower.countdown%10 == 0)
+						document.getElementById("cdstatus1").innerHTML = thisPower.countdown/100;
+					if(thisPower.countdown === thisPower.cooldown)
+					{
+						thisPower.originalLoc = me.getPosition();
+						thisPower.originalFacing = me.getRawFacing();
+						thisPower.terminate = false;
+					}
+					else if(thisPower.countdown > 80 && thisPower.terminate === false)
+					{
+						newpos = [thisPower.originalLoc[0] + thisPower.originalFacing[0]*shotProgress, thisPower.originalLoc[1] + thisPower.originalFacing[1]*shotProgress];
+						if(mapArr[pointToMapArrIndex(newpos)] !== 1)
+						{
+							basicShotVisualEffect(thisPower.originalLoc, [thisPower.originalFacing[0] * shotProgress, thisPower.originalFacing[1] * shotProgress] );
+							me.attack(newpos, 1, thisPower.originalFacing);
+						}
+						else
+						{
+							thisPower.terminate = true;
+						}
+					}
+					else if(thisPower.countdown === 1)
+					{
+						document.getElementById("cdstatus1").innerHTML = "ready";
+					}
+				},
+				countdown: 0, cooldown: 100, originalLoc: [0,0], originalFacing: [0,1], terminate: false
+			},
+
+			//teleport
+			{
+				power: function()
+				{
+					var thisPower = me.powers[POWER_TELEPORT];
+					if(thisPower.countdown%10 == 0)
+						document.getElementById("cdstatus2").innerHTML = thisPower.countdown/100;
+					if(thisPower.countdown === thisPower.cooldown)
+					{
+						var x = position[0] + facing[0]*10;
+						var y = position[1] + facing[1]*10;
+						requestPosition(x, y);
+						//get rid of this
+						me.injure();
+					}
+					else if(thisPower.countdown === 1)
+					{
+						document.getElementById("cdstatus2").innerHTML = "ready";
+					}
+				},
+				countdown: 0, cooldown: 1000, uniqueVars: {}
+			}
+
+		];
+
+		function basicShotVisualEffect(p, f)
+		{
+			effects_ctx.fillStyle = "rgba(255, 0, 0, 1.0)";
+			effects_ctx.fillRect(mapOffset + (p[0] + f[0]) * blocksize + Math.floor(blocksize/4), mapOffset + (p[1] + f[1]) * blocksize + Math.floor(blocksize/4), Math.floor(blocksize/2), Math.floor(blocksize/2));
+			setTimeout(function()
+			{
+				effects_ctx.clearRect(mapOffset + (p[0] + f[0]) * blocksize + Math.floor(blocksize/4), mapOffset + (p[1] + f[1]) * blocksize + Math.floor(blocksize/4), blocksize, blocksize);
+			},100);
+		}
+
+		//requests any position from the server
 		function requestPosition(newX, newY)
 		{
 			var visualX = (newX * blocksize) - (newX * blocksize)%blocksize;
@@ -282,12 +450,12 @@ Written by Chris Rollins
 			
 			if(mapArr[size*newY+newX] === 1)
 			{
-				charContext.fillStyle = "rgba(255, 0, 0, 1.0)";
-				charContext.fillRect(mapOffset + visualX, mapOffset + visualY, blocksize, blocksize);
+				effects_ctx.fillStyle = "rgba(255, 0, 0, 1.0)";
+				effects_ctx.fillRect(mapOffset + visualX, mapOffset + visualY, blocksize, blocksize);
 				setTimeout(function()
 				{
-					that.render();
-				},2000);
+					effects_ctx.clearRect(mapOffset + visualX, mapOffset + visualY, blocksize, blocksize);
+				},100);
 			}
 		}
 	}
@@ -340,8 +508,14 @@ Written by Chris Rollins
 			background = document.getElementById("background_canvas");
 			back_ctx = background.getContext("2d");
 
+			effectsCanvas = document.getElementById("effects_canvas");
+			effects_ctx = effectsCanvas.getContext("2d");
+
 			background.width = window.innerWidth;
 			background.height = window.innerHeight;
+
+			effectsCanvas.width = window.innerWidth;
+			effectsCanvas.height = window.innerHeight;
 
 			canvas.width = window.innerWidth;
 			canvas.height = window.innerHeight;
@@ -349,6 +523,8 @@ Written by Chris Rollins
 			ctx.fillStyle = "#000000";
 			back_ctx.strokeStyle = "#000000";
 			back_ctx.fillStyle = "#000000";
+			effects_ctx.strokeStyle = "#000000";
+			effects_ctx.fillStyle = "#000000";
 
 			//Register all the events after setting up canvases
 			initEvents();
@@ -356,8 +532,11 @@ Written by Chris Rollins
 			//Initiate the socket connection and set up socket events after setting up all the local stuff
 			socketEvents();
 
+
+
 			//game loop
 			var delay;
+			var pobj;
 			setInterval(function()
 			{
 				if(waitingOnResources)
@@ -372,23 +551,41 @@ Written by Chris Rollins
 				else
 				{
 					delay = 0;
-					for(var direction = 0; direction < 4; direction++)
+					for(var i = 0; i < 11; i++)
 					{
-						if(keysdown[direction])
+						pobj = localPlayer.powers[i];
+						if(keysdown[i])
 						{
-							localPlayer.setFacing(direction);
-							localPlayer.moveForward();
-							delay += moveLatency;
+							if(i < 4)
+							{
+								localPlayer.setFacing(i);
+								localPlayer.moveForward();
+								delay += moveLatency;
+							}
+							else if(pobj.countdown === 0)
+							{
+								pobj.countdown = pobj.cooldown;
+							}
+						}
+
+						if(pobj !== undefined)
+						{
+							if(pobj.countdown > 0)
+							{
+								pobj.power();
+								pobj.countdown--;
+							}
 						}
 					}
+					pobj = undefined;
 				
-					if(localPlayer.busy > 0)
+					if(localPlayer.lockMovement > 0)
 					{
-						localPlayer.busy--;
+						localPlayer.lockMovement--;
 					}
 					else
 					{
-						localPlayer.busy += delay;
+						localPlayer.lockMovement += delay;
 					}
 				}
 			}, 10);
@@ -397,5 +594,4 @@ Written by Chris Rollins
 
 	script = new Main();
 	window.addEventListener( "load", script.start );
-
 }());

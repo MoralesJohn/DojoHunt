@@ -1,4 +1,4 @@
-*{margin:0px;padding:0px;vertical-align:top;}
+*{margin:0px;padding:0px;vertical-align:top;cursor:crosshair;font-family:sans-serif;}
 #otherplayers_canvas
 {
 	position: absolute;
@@ -17,15 +17,52 @@
 }
 #localplayer_canvas
 {
-	cursor: crosshair;
 	position: absolute;
 	top: 0px;
 	left: 0px;
 	z-index: 2;
 	background: rgba(0, 0, 0, 0.0);
 }
+#effects_canvas
+{
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	z-index: 3;
+	background: rgba(0, 0, 0, 0.0);
+}
 #container
 {
 	width: 100%;
 	height: 100%;
+}
+#status
+{
+	position: absolute;
+	top: 0px;
+	left: 750px;
+	width: 30%;
+	height: 100%;
+	background-color: #aaa;
+}
+#cdstatus1, #cdstatus2
+{
+	color: #ccffff;
+}
+#healthbar-inner
+{
+	width: 120px;
+	height: 30px;
+	border-right: 2px solid #aaffaa;
+	border-top-right-radius: 3px;
+	border-bottom-right-radius: 3px;
+	background-color: #00ee44;
+}
+#healthbar-outer
+{
+	width: 121px;
+	height: 30px;
+	border: 3px solid #00ffff;
+	border-radius: 3px;
+	background-color: #000000;
 }
