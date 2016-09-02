@@ -24,7 +24,7 @@ Written by Chris Rollins
 	var waitingOnResources = true;
 
 	//  map globals
-	var blocksize = 13;
+	var blocksize = 14;
 	var moveLatency = 8;
 	var mapOffset = blocksize;
 
@@ -253,7 +253,7 @@ Written by Chris Rollins
 
 				// charContext.fillStyle = "rgba(0, 100, 255, 1.0)";
 				// charContext.fillRect(mapOffset + visualX, mapOffset + visualY, blocksize, blocksize);
-				drawPlayer(visualX, visualY, "rgba(0, 100, 255, 1.0)", "rgba(200, 200, 255, 1.0)", charContext);
+				drawPlayer(visualX, visualY, "rgba(0, 100, 255, 1.0)", "rgba(0, 100, 255, 1.0)", charContext);
 			}
 		};
 
@@ -284,31 +284,37 @@ Written by Chris Rollins
 		
 		//Used by the render function.
 		//This function only provides the appearance of the player.
-		drawPlayer(x, y, outlineColor, fillColor, context)
+		function drawPlayer(x, y, outlineColor, fillColor, context)
 		{
 			if(outlineColor === undefined)
-				color = "#000000";
+				outlineColor = "#000000";
 			if(fillColor === undefined)
-				color = "#0055ff";
+				fillColor = "rgba(0, 100, 255, 1.0)";
 
-			var short = blocksize/3;
+			var short = Math.floor(blocksize/3);
+			var long = Math.floor(blocksize/2);
+
+			x += mapOffset + Math.floor(blocksize/2);
+			y += mapOffset + Math.floor(blocksize/2);
 
 			var triangles =
 			[
-				[[x + short, y + blocksize/2], [x, y - blocksize/2], [x + short, y + blocksize/2]],
-				[[x + blocksize/2, y], [x - blocksize/2, y - short], [x - blocksize/2, y + short]],
-				[[x - short, y - blocksize/2], [x, y+blocksize/2], [x - blocksize/2, y + short]],
-				[[x + blocksize/2, y + short], [x - blocksize/2, y], [x + blocksize/2, y - short]]
+				[[x + short, y + long], [x, y - long], [x + short, y + long]],
+				[[x + long, y], [x - long, y - short], [x - long, y + short]],
+				[[x - short, y - long], [x, y+long], [x - long, y + short]],
+				[[x + long, y + short], [x - long, y], [x + long, y - short]]
 			]
+			var t = triangles[that.getFacing()];
 
-			context.strokeStyle = outlineColor;
+			//context.strokeStyle = outlineColor;
 			context.fillStyle = fillColor;
 
 			context.beginPath();
-			for(var p in triangle[that.getFacing()])
+			context.moveTo(t[0][0], t[0][1]);
+			for(var p in t)
 			{
-				context.moveTo(p[i][0], p[i][1]);
-				context.lineTo(p[i][0], p[i][1]);
+				console.log(t[p][0], t[p][1]);
+				context.lineTo(t[p][0], t[p][1]);
 			}
 			context.closePath();
 			context.fill();
