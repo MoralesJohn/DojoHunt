@@ -264,9 +264,6 @@ Written by Chris Rollins
 			if(mapArr[size*position[1]+position[0]] == 0)
 			{
 				clearCanvas(charCanvas);
-
-				// charContext.fillStyle = "rgba(0, 100, 255, 1.0)";
-				// charContext.fillRect(mapOffset + visualX, mapOffset + visualY, blocksize, blocksize);
 				drawPlayer(visualX, visualY, "rgba(0, 100, 255, 1.0)", "rgba(0, 100, 255, 1.0)", charContext, this.ndex);
 			}
 		};
@@ -281,12 +278,7 @@ Written by Chris Rollins
 
 			socket.emit("movement_request", {location: [size*newY+newX, localPlayer.getFacing()]}); 
 			
-			if(mapArr[size*newY+newX] === 0)
-			{
-				// console.log("movement request to:", {location: [size*newY+newX, localPlayer.getFacing()]});
-				// socket.emit("movement_request", {location: [size*newY+newX, localPlayer.getFacing()]}); 
-			}
-			else
+			if(mapArr[size*newY+newX] === 1)
 			{
 				console.log("collision:", mapArr[size*newY+newX]);
 				charContext.fillStyle = "rgba(255, 0, 0, 1.0)";
