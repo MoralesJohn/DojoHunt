@@ -602,6 +602,9 @@ Written by Chris Rollins
 		if(fillColor === undefined)
 			fillColor = "rgba(0, 100, 255, 1.0)";
 
+		if(playerIndex === localPlayer.ndex || players.location === pointToMapArrIndex(localPlayer.getPosition()))
+			fillColor = "rgba(0, 100, 255, 1.0)";
+
 		var short = Math.floor(blocksize/3);
 		var long = Math.floor(blocksize/2);
 
