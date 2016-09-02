@@ -30,6 +30,12 @@ function findPlayer(socketID){
 	}
 }
 
+function damage(target_ndx, type, shooter){
+	players[target_ndx].health = players[target_ndx].health - 1;
+	console.log('health', players[target_ndx].health)
+	io.emit('successful_attack', {'ndex': target_ndx, 'damage': 1, 'shooter': shooter});
+}
+
 function PlayerConstructor(socketID){
 	var player = {};
 	player.id = socketID;
@@ -45,7 +51,7 @@ function PlayerConstructor(socketID){
 	}
 	start_pt = starts[start_ndx];
 	player.location = start_pt;
-	mapArr[start_pt[0]] = -1;
+	mapArr[start_pt[0]] = socketID;
 	player.name = 'Player ' + Math.floor(Math.random()*100000);
 	player.score = 0;
 	player.health = 3;
@@ -64,12 +70,10 @@ io.sockets.on('connection', function(socket){
 	socket.emit('test', {'this': 'is a test'});
 	console.log("connected:", socket.id);
 	var player_constructor = PlayerConstructor(socket.id);
-	console.log(player_constructor);
 	players.push(player_constructor);
 
 	var ndex = players.length-1;
 	var new_player = players[ndex];
-	console.log(players);
 	socket.emit('join_game', {'you': ndex, 'map': mapArr, 'players': players});
 	socket.broadcast.emit('new_player', {'ndex': ndex, 'player': new_player});
 
@@ -84,13 +88,56 @@ io.sockets.on('connection', function(socket){
 		if (mapArr[data.location[0]]==0){
 			cls = players[ndx].location;
 			mapArr[cls[0]] = 0;
-			mapArr[data.location[0]] = -1;
+			mapArr[data.location[0]] = socket.id;
 			players[ndx].location = data.location;
 			io.emit('player_move', {'ndex': ndx, 'location': data.location});
 		} else {
 			data.location[0] = players[ndx].location[0];
 			io.emit('player_move', {'ndex': ndx, 'location': data.location});
 			console.log('no move 3', data.location);
+		}
+	});
+
+	socket.on('shots_fired', function(data){
+
+		socket.broadcast.emit('shot_fired', data);
+		var shot_location = data.shotStartPosition;
+		console.log('shot_location', shot_location);
+		var range = data.shotRange - 1;
+		while (range >= 0) {
+			if (shot_location<0 || shot_location>2499){
+				break;
+			}
+			if (mapArr[shot_location] !== 0){
+				// console.log('shot location', mapArr[shot_location],'----------------------')
+
+				if (mapArr[shot_location] == 1){
+					break;
+				} else {
+					target = mapArr[shot_location];
+					console.log('target ID:', mapArr[shot_location]);
+					target_ndx = findPlayer(target);
+					console.log('target:', target_ndx);
+					console.log('players', players);
+					damage(target_ndx, data.type, data.shootingPlayerIndex);
+					}
+				}
+			
+			switch (data.shotFacing){
+				case 0:
+					shot_location = shot_location - 50;
+					break;
+				case 1:
+					shot_location = shot_location + 1;
+					break;
+				case 2:
+					shot_location = shot_location + 50;
+					break;
+				case 3:
+					shot_location = shot_location - 1;
+					break;
+			}
+			range=range-1;
 		}
 	});
 
