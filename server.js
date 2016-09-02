@@ -153,9 +153,12 @@ io.sockets.on('connection', function(socket){
 		ndx = findPlayer(socket.id);
 		io.emit('death', {'ndex': ndx});
 		console.log('index:',ndx);
-		cls = players[ndx].location;
-		mapArr[cls[0]] = 0;
-		players[ndx] = false;
+		if(ndx !== undefined && ndx > 0)
+		{
+			cls = players[ndx].location;
+			mapArr[cls[0]] = 0;
+			players[ndx] = false;
+		}
 	});
 });
 

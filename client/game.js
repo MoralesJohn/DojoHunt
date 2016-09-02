@@ -66,13 +66,31 @@ Written by Chris Rollins
 
 		socket.on("new_player", function(data)
 		{
+			var loc;
+			var p;
+			var vx;
+			var vy;
+			clearCanvas(canvas);
+			for(var i in players)
+			{
+				if(players[i].dead !== true)
+				{
+					loc = players[i].location;
+					p = mapArrIndexToPoint(loc[0]);
+					vx = (p[0] * blocksize) - (p[0] * blocksize)%blocksize;
+					vy = (p[1] * blocksize) - (p[1] * blocksize)%blocksize;
+					drawPlayer(vx, vy, "rgba(0, 100, 255, 1.0)", "rgba(255, 0, 0, 1.0)", ctx, i);
+				}
+			}
 			players[data.ndex] = data.player;
 		});
 
 		socket.on("player_move", function(data)
 		{
-			var loc = data.location;
-			var oldloc = players[data.ndex].location[0];
+			var loc;
+			var oldloc;
+			loc = data.location;
+			oldloc = players[data.ndex].location[0];
 			positionPlayers[oldloc] = 0;
 			positionPlayers[loc[0]] = players[data.ndex];
 			players[data.ndex].location = loc;
@@ -90,8 +108,19 @@ Written by Chris Rollins
 				var vx = (p[0] * blocksize) - (p[0] * blocksize)%blocksize;
 				var vy = (p[1] * blocksize) - (p[1] * blocksize)%blocksize;
 				clearCanvas(canvas);
-				drawPlayer(vx, vy, "rgba(0, 100, 255, 1.0)", "rgba(255, 0, 0, 1.0)", ctx, data.ndex);
+				for(var i in players)
+				{
+					if(players[i].dead !== true)
+					{
+						loc = players[i].location;
+						p = mapArrIndexToPoint(loc[0]);
+						vx = (p[0] * blocksize) - (p[0] * blocksize)%blocksize;
+						vy = (p[1] * blocksize) - (p[1] * blocksize)%blocksize;
+						drawPlayer(vx, vy, "rgba(0, 100, 255, 1.0)", "rgba(255, 0, 0, 1.0)", ctx, i);
+					}
+				}
 			}
+
 		});
 
 		socket.on("shot_fired", function(data)
@@ -129,6 +158,27 @@ Written by Chris Rollins
 			if(data.ndex === localPlayer.ndex)
 			{
 				isDead = localPlayer.injure(data.damage);
+			}
+		});
+
+		socket.on("death", function(data)
+		{
+			players[data.ndex].dead = true;
+			var loc;
+			var p;
+			var vx;
+			var vy;
+			clearCanvas(canvas);
+			for(var i in players)
+			{
+				if(players[i].dead !== true)
+				{
+					loc = players[i].location;
+					p = mapArrIndexToPoint(loc[0]);
+					vx = (p[0] * blocksize) - (p[0] * blocksize)%blocksize;
+					vy = (p[1] * blocksize) - (p[1] * blocksize)%blocksize;
+					drawPlayer(vx, vy, "rgba(0, 100, 255, 1.0)", "rgba(255, 0, 0, 1.0)", ctx, i);
+				}
 			}
 		});
 	}
@@ -373,8 +423,11 @@ Written by Chris Rollins
 			var visualX = (position[0] * blocksize) - (position[0] * blocksize)%blocksize;
 			var visualY = (position[1] * blocksize) - (position[1] * blocksize)%blocksize;
 			var size = Math.floor(Math.sqrt(mapArr.length));
-			clearCanvas(charCanvas);
-			drawPlayer(visualX, visualY, "rgba(0, 100, 255, 1.0)", "rgba(0, 100, 255, 1.0)", charContext, this.ndex);
+			if(this.dead === false)
+			{
+				clearCanvas(charCanvas);
+				drawPlayer(visualX, visualY, "rgba(0, 100, 255, 1.0)", "rgba(0, 100, 255, 1.0)", charContext, this.ndex);
+			}
 		};
 
 		//A building block for any damaging attack power.
@@ -583,12 +636,6 @@ Written by Chris Rollins
 			effectsCanvas = document.getElementById("effects_canvas");
 			effects_ctx = effectsCanvas.getContext("2d");
 
-			fogCanvas = document.getElementById("fog_canvas");
-			fog_ctx = effectsCanvas.getContext("2d");
-
-			fogCanvas.width = window.innerWidth;
-			fogCanvas.height = window.innerHeight;
-
 			effectsCanvas.width = window.innerWidth;
 			effectsCanvas.height = window.innerHeight;
 
@@ -603,7 +650,6 @@ Written by Chris Rollins
 			back_ctx.fillStyle = "#000000";
 			effects_ctx.strokeStyle = "#000000";
 			effects_ctx.fillStyle = "#000000";
-			fog_ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
 
 			//Register all the events after setting up canvases
 			initEvents();
@@ -669,8 +715,10 @@ Written by Chris Rollins
 				}
 				else //player is dead
 				{
-					document.getElementById("deadcd").innerHTML = "YOU DIED";
-					document.getElementById("deadcd").innerHTML = deathTimer/100;
+					if(deathTimer%100 == 0)
+					{
+						document.getElementById("deadcd").innerHTML = deathTimer/100;
+					}
 					deathTimer--;
 					if(deathTimer < 1)
 						window.location.reload(true);
