@@ -76,10 +76,13 @@ Written by Chris Rollins
 				if(players[i].dead !== true)
 				{
 					loc = players[i].location;
-					p = mapArrIndexToPoint(loc[0]);
-					vx = (p[0] * blocksize) - (p[0] * blocksize)%blocksize;
-					vy = (p[1] * blocksize) - (p[1] * blocksize)%blocksize;
-					drawPlayer(vx, vy, "rgba(0, 100, 255, 1.0)", "rgba(255, 0, 0, 1.0)", ctx, i);
+					if(loc !== undefined)
+					{
+						p = mapArrIndexToPoint(loc[0]);
+						vx = (p[0] * blocksize) - (p[0] * blocksize)%blocksize;
+						vy = (p[1] * blocksize) - (p[1] * blocksize)%blocksize;
+						drawPlayer(vx, vy, "rgba(0, 100, 255, 1.0)", "rgba(255, 0, 0, 1.0)", ctx, i);
+					}
 				}
 			}
 			players[data.ndex] = data.player;
@@ -113,10 +116,13 @@ Written by Chris Rollins
 					if(players[i].dead !== true)
 					{
 						loc = players[i].location;
-						p = mapArrIndexToPoint(loc[0]);
-						vx = (p[0] * blocksize) - (p[0] * blocksize)%blocksize;
-						vy = (p[1] * blocksize) - (p[1] * blocksize)%blocksize;
-						drawPlayer(vx, vy, "rgba(0, 100, 255, 1.0)", "rgba(255, 0, 0, 1.0)", ctx, i);
+						if(loc !== undefined && i != localPlayer.ndex)
+						{
+							p = mapArrIndexToPoint(loc[0]);
+							vx = (p[0] * blocksize) - (p[0] * blocksize)%blocksize;
+							vy = (p[1] * blocksize) - (p[1] * blocksize)%blocksize;
+							drawPlayer(vx, vy, "rgba(0, 100, 255, 1.0)", "rgba(255, 0, 0, 1.0)", ctx, i);
+						}
 					}
 				}
 			}
@@ -148,7 +154,7 @@ Written by Chris Rollins
 					break;
 			}
 
-			localPlayer.powerVisualFunctions[data.type](pp, ff);
+			localPlayer.powerVisualFunctions[data["type"]](pp, ff);
 		});
 
 		socket.on("successful_attack", function(data)
@@ -174,10 +180,13 @@ Written by Chris Rollins
 				if(players[i].dead !== true)
 				{
 					loc = players[i].location;
-					p = mapArrIndexToPoint(loc[0]);
-					vx = (p[0] * blocksize) - (p[0] * blocksize)%blocksize;
-					vy = (p[1] * blocksize) - (p[1] * blocksize)%blocksize;
-					drawPlayer(vx, vy, "rgba(0, 100, 255, 1.0)", "rgba(255, 0, 0, 1.0)", ctx, i);
+					if(loc !== undefined)
+					{
+						p = mapArrIndexToPoint(loc[0]);
+						vx = (p[0] * blocksize) - (p[0] * blocksize)%blocksize;
+						vy = (p[1] * blocksize) - (p[1] * blocksize)%blocksize;
+						drawPlayer(vx, vy, "rgba(0, 100, 255, 1.0)", "rgba(255, 0, 0, 1.0)", ctx, i);
+					}
 				}
 			}
 		});
