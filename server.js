@@ -98,6 +98,11 @@ io.sockets.on('connection', function(socket){
 		}
 	});
 
+	socket.on('death', function(data){
+		io.emit('player_move', {'ndex': data.player, 'location': -1});
+		players[data.player] = -1;
+	})
+
 	socket.on('shots_fired', function(data){
 
 		socket.broadcast.emit('shot_fired', data);
