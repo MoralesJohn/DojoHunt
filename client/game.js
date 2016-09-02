@@ -754,7 +754,9 @@ Written by Chris Rollins
 						deathTimer--;
 					}
 					else
-						window.location.reload(true);
+					{
+						//window.location = "/";
+					}
 				}
 			}, 10);
 		}
