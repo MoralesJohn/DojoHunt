@@ -99,7 +99,9 @@ io.sockets.on('connection', function(socket){
 	});
 
 	socket.on('death', function(data){
-		io.emit('player_move', {'ndex': data.player, 'location': -1});
+		io.emit('death', {'ndex': data.player});
+		var local = players[data.player].location;
+		local[0] = 0;
 		players[data.player] = -1;
 	})
 
@@ -149,7 +151,7 @@ io.sockets.on('connection', function(socket){
 	socket.on('disconnect', function(data)
 	{
 		ndx = findPlayer(socket.id);
-		io.emit('player_move', {'ndex': ndx, 'location': -1});
+		io.emit('death', {'ndex': ndx});
 		console.log('index:',ndx);
 		cls = players[ndx].location;
 		mapArr[cls[0]] = 0;
