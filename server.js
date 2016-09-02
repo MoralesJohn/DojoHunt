@@ -31,6 +31,7 @@ function findPlayer(socketID){
 }
 
 function damage(target_ndx, type, shooter){
+	console.log('')
 	players[target_ndx].health = players[target_ndx].health - 1;
 	console.log('health', players[target_ndx].health)
 	io.emit('successful_attack', {'ndex': target_ndx, 'damage': 1, 'shooter': shooter});
@@ -92,16 +93,17 @@ io.sockets.on('connection', function(socket){
 			players[ndx].location = data.location;
 			io.emit('player_move', {'ndex': ndx, 'location': data.location});
 		} else {
+			console.log(players);
+		
 			data.location[0] = players[ndx].location[0];
 			io.emit('player_move', {'ndex': ndx, 'location': data.location});
-			console.log('no move 3', data.location);
 		}
 	});
 
 	socket.on('death', function(data){
 		io.emit('death', {'ndex': data.player});
 		var local = players[data.player].location;
-		local[0] = 0;
+		mapArr[local[0]] = 0;
 		players[data.player] = -1;
 	})
 
@@ -109,7 +111,6 @@ io.sockets.on('connection', function(socket){
 
 		socket.broadcast.emit('shot_fired', data);
 		var shot_location = data.shotStartPosition;
-		console.log('shot_location', shot_location);
 		var range = data.shotRange - 1;
 		while (range >= 0) {
 			if (shot_location<0 || shot_location>2499){
@@ -126,6 +127,7 @@ io.sockets.on('connection', function(socket){
 					target_ndx = findPlayer(target);
 					console.log('target:', target_ndx);
 					console.log('players', players);
+					
 					damage(target_ndx, data.type, data.shootingPlayerIndex);
 					}
 				}
@@ -153,12 +155,12 @@ io.sockets.on('connection', function(socket){
 		ndx = findPlayer(socket.id);
 		io.emit('death', {'ndex': ndx});
 		console.log('index:',ndx);
-		if(ndx !== undefined && ndx > 0)
-		{
+		// if(ndx !== undefined && ndx > 0)
+		// {
 			cls = players[ndx].location;
 			mapArr[cls[0]] = 0;
 			players[ndx] = false;
-		}
+		// }
 	});
 });
 
