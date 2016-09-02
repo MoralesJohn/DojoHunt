@@ -58,6 +58,8 @@ Written by Chris Rollins
 		socket.on("player_move", function(data)
 		{
 			players[data.ndex].location = data.location;
+
+			//Player is the local player
 			if(data.ndex == localPlayer.ndex)
 			{
 				console.log(localPlayer.getPosition());
@@ -65,6 +67,10 @@ Written by Chris Rollins
 				var y = Math.floor(data.location[0]/50);
 				localPlayer.setPosition([x, y]);
 				localPlayer.render();
+			}
+			else //otherwise render it on the enemy player canvas
+			{
+				//drawPlayer(visualX, visualY, "rgba(0, 100, 255, 1.0)", "rgba(0, 100, 255, 1.0)", charContext, this.ndex);
 			}
 		});
 
@@ -253,7 +259,7 @@ Written by Chris Rollins
 
 				// charContext.fillStyle = "rgba(0, 100, 255, 1.0)";
 				// charContext.fillRect(mapOffset + visualX, mapOffset + visualY, blocksize, blocksize);
-				drawPlayer(visualX, visualY, "rgba(0, 100, 255, 1.0)", "rgba(0, 100, 255, 1.0)", charContext);
+				drawPlayer(visualX, visualY, "rgba(0, 100, 255, 1.0)", "rgba(0, 100, 255, 1.0)", charContext, this.ndex);
 			}
 		};
 
@@ -264,15 +270,17 @@ Written by Chris Rollins
 			var tempX = visualX;
 			var tempY = visualY;
 			var size = Math.floor(Math.sqrt(mapArr.length));
+
+			socket.emit("movement_request", {location: [size*newY+newX, localPlayer.getFacing()]}); 
 			
 			if(mapArr[size*newY+newX] === 0)
 			{
-				console.log("movement request to:", {location: [size*newY+newX, localPlayer.getFacing()]});
-				socket.emit("movement_request", {location: [size*newY+newX, localPlayer.getFacing()]}); 
+				// console.log("movement request to:", {location: [size*newY+newX, localPlayer.getFacing()]});
+				// socket.emit("movement_request", {location: [size*newY+newX, localPlayer.getFacing()]}); 
 			}
 			else
 			{
-				console.log("collision");
+				console.log("collision:", mapArr[size*newY+newX]);
 				charContext.fillStyle = "rgba(255, 0, 0, 1.0)";
 				charContext.fillRect(mapOffset + visualX, mapOffset + visualY, blocksize, blocksize);
 				setTimeout(function()
@@ -281,44 +289,45 @@ Written by Chris Rollins
 				},2000);
 			}
 		}
-		
-		//Used by the render function.
-		//This function only provides the appearance of the player.
-		function drawPlayer(x, y, outlineColor, fillColor, context)
+	}
+
+
+	//Used by the render function and also drawing other players.
+	//This function only provides the appearance of the player.
+	function drawPlayer(x, y, outlineColor, fillColor, context, playerIndex)
+	{
+		if(outlineColor === undefined)
+			outlineColor = "#000000";
+		if(fillColor === undefined)
+			fillColor = "rgba(0, 100, 255, 1.0)";
+
+		var short = Math.floor(blocksize/3);
+		var long = Math.floor(blocksize/2);
+
+		x += mapOffset + Math.floor(blocksize/2);
+		y += mapOffset + Math.floor(blocksize/2);
+
+		var triangles =
+		[
+			[[x + short, y + long], [x, y - long], [x - short, y + long]],	//up
+			[[x + long, y], [x - long, y - short], [x - long, y + short]],	//right
+			[[x - short, y - long], [x, y+long], [x + short, y - long]],	//down
+			[[x + long, y + short], [x - long, y], [x + long, y - short]]	//left
+		]
+		var t = triangles[players[playerIndex].location[1]];
+
+		//context.strokeStyle = outlineColor;
+		context.fillStyle = fillColor;
+
+		context.beginPath();
+		context.moveTo(t[0][0], t[0][1]);
+		for(var p in t)
 		{
-			if(outlineColor === undefined)
-				outlineColor = "#000000";
-			if(fillColor === undefined)
-				fillColor = "rgba(0, 100, 255, 1.0)";
-
-			var short = Math.floor(blocksize/3);
-			var long = Math.floor(blocksize/2);
-
-			x += mapOffset + Math.floor(blocksize/2);
-			y += mapOffset + Math.floor(blocksize/2);
-
-			var triangles =
-			[
-				[[x + short, y + long], [x, y - long], [x + short, y + long]],
-				[[x + long, y], [x - long, y - short], [x - long, y + short]],
-				[[x - short, y - long], [x, y+long], [x - long, y + short]],
-				[[x + long, y + short], [x - long, y], [x + long, y - short]]
-			]
-			var t = triangles[that.getFacing()];
-
-			//context.strokeStyle = outlineColor;
-			context.fillStyle = fillColor;
-
-			context.beginPath();
-			context.moveTo(t[0][0], t[0][1]);
-			for(var p in t)
-			{
-				console.log(t[p][0], t[p][1]);
-				context.lineTo(t[p][0], t[p][1]);
-			}
-			context.closePath();
-			context.fill();
+			console.log(t[p][0], t[p][1]);
+			context.lineTo(t[p][0], t[p][1]);
 		}
+		context.closePath();
+		context.fill();
 	}
 
 	function Main()
