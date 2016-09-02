@@ -252,7 +252,7 @@ Written by Chris Rollins
 			
 			if(health < 0)
 			{
-				//death
+				document.getElementById("hovermessage").innerHTML = "YOU DIED";
 				str = "0px";
 			}
 
