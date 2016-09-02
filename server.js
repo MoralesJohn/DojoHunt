@@ -87,6 +87,10 @@ io.sockets.on('connection', function(socket){
 			mapArr[data.location[0]] = -1;
 			players[ndx].location = data.location;
 			io.emit('player_move', {'ndex': ndx, 'location': data.location});
+		} else {
+			data.location[0] = players[ndx].location[0];
+			io.emit('player_move', {'ndex': ndx, 'location': data.location});
+			console.log('no move', data.location);
 		}
 	});
 
