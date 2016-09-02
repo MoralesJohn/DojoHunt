@@ -90,7 +90,7 @@ io.sockets.on('connection', function(socket){
 		} else {
 			data.location[0] = players[ndx].location[0];
 			io.emit('player_move', {'ndex': ndx, 'location': data.location});
-			console.log('no move', data.location);
+			console.log('no move 3', data.location);
 		}
 	});
 
