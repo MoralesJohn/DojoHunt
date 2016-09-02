@@ -9,14 +9,9 @@ Written by Chris Rollins
 {	
 	//globals
 	var script;
-	var canvas;
-	var ctx;
-	var lastpos = [0, 0];
 	var mouseIsDown = false;
 	var mapArr = [];
 	var keysdown = [false, false, false, false, false];
-	var background;
-	var back_ctx;
 	var charPos = [0,0];
 	var localPlayer;
 	var players = [];
@@ -27,6 +22,12 @@ Written by Chris Rollins
 	var blocksize = 14;
 	var moveLatency = 8;
 	var mapOffset = blocksize;
+
+	//canvas vars, mostly get set in main
+	var background;
+	var back_ctx;
+	var canvas;
+	var ctx;
 
 	const DIRECTION_UP = 0;
 	const DIRECTION_RIGHT = 1;
@@ -52,12 +53,13 @@ Written by Chris Rollins
 
 		socket.on("new_player", function(data)
 		{
-			players[data[ndex]] = data.player;
+			players[data.ndex] = data.player;
 		});
 
 		socket.on("player_move", function(data)
 		{
-			players[data.ndex].location = data.location;
+			loc = data.location;
+			players[data.ndex].location = loc;
 
 			//Player is the local player
 			if(data.ndex == localPlayer.ndex)
@@ -70,7 +72,13 @@ Written by Chris Rollins
 			}
 			else //otherwise render it on the enemy player canvas
 			{
-				//drawPlayer(visualX, visualY, "rgba(0, 100, 255, 1.0)", "rgba(0, 100, 255, 1.0)", charContext, this.ndex);
+				var x = (loc[0] % 50);
+				var y = (Math.floor(loc[0]/50));
+				var vx = (x * blocksize) - (x * blocksize)%blocksize;
+				var vy = (y * blocksize) - (y * blocksize)%blocksize;
+				clearCanvas(canvas);
+				drawPlayer(vx, vy, "rgba(0, 100, 255, 1.0)", "rgba(255, 0, 0, 1.0)", ctx, data.ndex);
+				mapArr[loc[0]] = -1;
 			}
 		});
 
