@@ -17,6 +17,7 @@ Written by Chris Rollins
 	var positionPlayers = [];
 	var socket;
 	var waitingOnResources = true;
+	var deathTimer = 3000;
 
 	//  map globals
 	var blocksize = 14;
@@ -264,6 +265,8 @@ Written by Chris Rollins
 		this.lockMovement = 0;
 
 		this.ndex = ndex;
+
+		this.dead = false;
 		
 		this.init = function()
 		{
@@ -286,9 +289,11 @@ Written by Chris Rollins
 
 			if(health < 0)
 			{
-				document.getElementById("hovermessage").innerHTML = "YOU DIED";
+				document.getElementById("dead").innerHTML = "YOU DIED";
 				str = "0px";
 				dead = true;
+				this.dead = true;
+				socket.emit("death", {player: this.ndex});
 			}
 
 			document.getElementById("healthbar-inner").style.width = str;
@@ -622,7 +627,7 @@ Written by Chris Rollins
 						waitingOnResources = false;
 					}
 				}
-				else
+				else if(localPlayer.dead === false)
 				{
 					delay = 0;
 					for(var i = 0; i < 11; i++)
@@ -661,6 +666,14 @@ Written by Chris Rollins
 					{
 						localPlayer.lockMovement += delay;
 					}
+				}
+				else //player is dead
+				{
+					document.getElementById("deadcd").innerHTML = "YOU DIED";
+					document.getElementById("deadcd").innerHTML = deathTimer/100;
+					deathTimer--;
+					if(deathTimer < 1)
+						window.location.reload(true);
 				}
 			}, 10);
 		}
