@@ -149,6 +149,7 @@ io.sockets.on('connection', function(socket){
 	socket.on('disconnect', function(data)
 	{
 		ndx = findPlayer(socket.id);
+		io.emit('player_move', {'ndex': ndx, 'location': -1});
 		console.log('index:',ndx);
 		cls = players[ndx].location;
 		mapArr[cls[0]] = 0;
