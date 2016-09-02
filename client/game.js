@@ -756,6 +756,7 @@ Written by Chris Rollins
 					else
 					{
 						//window.location = "/";
+						
 					}
 				}
 			}, 10);
