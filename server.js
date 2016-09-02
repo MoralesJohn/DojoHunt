@@ -80,7 +80,7 @@ io.sockets.on('connection', function(socket){
 	});
 
 	socket.on('movement_request', function(data){
-		ndx = findPlayer(socket.id);qw
+		ndx = findPlayer(socket.id);
 		if (mapArr[data.location[0]]==0){
 			cls = players[ndx].location;
 			mapArr[cls[0]] = 0;
