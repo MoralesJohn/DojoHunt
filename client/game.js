@@ -93,9 +93,42 @@ Written by Chris Rollins
 			}
 		});
 
-		socket.on("damage", function(data)
+		socket.on("shot_fired", function(data)
 		{
-			document.getElementById("healthbar-inner").width = localPlayer.health * 40;
+			//{shootingPlayerIndex: this.ndex, shotStartPosition: pointToMapArrIndex(from), shotRange: range, shotFacing: ff, type: powerType}
+			var p;
+			var pp = mapArrIndexToPoint(p);
+			pp[0] = pp[0] * blocksize + mapOffset;
+			pp[1] = pp[1] * blocksize + mapOffset;
+			var f;
+			var ff;
+			switch(f)
+			{
+				case DIRECTION_RIGHT:
+					ff = [1, 0];
+					break;
+				case DIRECTION_UP:
+					ff = [0, -1];
+					break;
+				case DIRECTION_LEFT:
+					ff = [-1, 0];
+					break;
+				case DIRECTION_DOWN:
+					ff = [0, 1];
+					break;
+			}
+
+			localPlayer.powerVisualFunctions[data.type](pp, ff);
+		});
+
+		socket.on("successful_attack", function(data)
+		{
+			//{'ndex': target_ndx, 'damage': 1, 'shooter': shooter}
+			var isDead = false;
+			if(data.ndex === localPlayer.ndex)
+			{
+				isDead = localPlayer.injure(data.damage);
+			}
 		});
 	}
 	
@@ -243,20 +276,24 @@ Written by Chris Rollins
 			return health;
 		}
 
-		this.injure = function()
+		this.injure = function(dmg)
 		{
-			health--;
+			health-=dmg;
 			var arr = ["1px", "40px", "80px", "120px"];
 			var str = arr[health];
 			var color;
-			
+			var dead = false;
+
 			if(health < 0)
 			{
 				document.getElementById("hovermessage").innerHTML = "YOU DIED";
 				str = "0px";
+				dead = true;
 			}
 
 			document.getElementById("healthbar-inner").style.width = str;
+
+			return dead;
 		}
 
 		this.moveForward = function()
@@ -363,7 +400,35 @@ Written by Chris Rollins
 
 		//uh its complicated lol
 		this.powers =
-		[undefined, undefined, undefined, undefined, //like seriously I cant even believe I'm dong this
+		[
+		{power: function()
+			{var thisPower = me.powers[0];
+				if(thisPower.countdown == thisPower.cooldown && me.lockMovement == 0)
+				{
+					me.moveForward();
+				}
+			}, countdown: 0, cooldown: 1},
+		{power: function()
+			{var thisPower = me.powers[1];
+				if(thisPower.countdown == thisPower.cooldown && me.lockMovement == 0)
+				{
+					me.moveForward();
+				}
+			}, countdown: 0, cooldown: 1},
+		{power: function()
+			{var thisPower = me.powers[2];
+				if(thisPower.countdown == thisPower.cooldown && me.lockMovement == 0)
+				{
+					me.moveForward();
+				}
+			}, countdown: 0, cooldown: 1},
+		{power: function()
+			{var thisPower = me.powers[3];
+				if(thisPower.countdown == thisPower.cooldown && me.lockMovement == 0)
+				{
+					me.moveForward();
+				}
+			}, countdown: 0, cooldown: 1},
 			
 			//basic shot
 			//A simple ranged shot. An example of how the attack method can be used.
@@ -386,7 +451,7 @@ Written by Chris Rollins
 						newpos = [thisPower.originalLoc[0] + thisPower.originalFacing[0]*shotProgress, thisPower.originalLoc[1] + thisPower.originalFacing[1]*shotProgress];
 						if(mapArr[pointToMapArrIndex(newpos)] !== 1)
 						{
-							basicShotVisualEffect(thisPower.originalLoc, [thisPower.originalFacing[0] * shotProgress, thisPower.originalFacing[1] * shotProgress] );
+							me.powerVisualFunctions[POWER_BASIC_SHOT](thisPower.originalLoc, [thisPower.originalFacing[0] * shotProgress, thisPower.originalFacing[1] * shotProgress] );
 							me.attack(newpos, 1, thisPower.originalFacing);
 						}
 						else
@@ -414,28 +479,30 @@ Written by Chris Rollins
 						var x = position[0] + facing[0]*10;
 						var y = position[1] + facing[1]*10;
 						requestPosition(x, y);
-						//get rid of this
-						me.injure();
 					}
 					else if(thisPower.countdown === 1)
 					{
 						document.getElementById("cdstatus2").innerHTML = "ready";
 					}
 				},
-				countdown: 0, cooldown: 1000, uniqueVars: {}
+				countdown: 0, cooldown: 1000
 			}
 
 		];
 
-		function basicShotVisualEffect(p, f)
-		{
-			effects_ctx.fillStyle = "rgba(255, 0, 0, 1.0)";
-			effects_ctx.fillRect(mapOffset + (p[0] + f[0]) * blocksize + Math.floor(blocksize/4), mapOffset + (p[1] + f[1]) * blocksize + Math.floor(blocksize/4), Math.floor(blocksize/2), Math.floor(blocksize/2));
-			setTimeout(function()
+		this.powerVisualFunctions =
+		[undefined, undefined, undefined, undefined,
+
+			function basicShotVisualEffect(p, f)
 			{
-				effects_ctx.clearRect(mapOffset + (p[0] + f[0]) * blocksize + Math.floor(blocksize/4), mapOffset + (p[1] + f[1]) * blocksize + Math.floor(blocksize/4), blocksize, blocksize);
-			},100);
-		}
+				effects_ctx.fillStyle = "rgba(255, 0, 0, 1.0)";
+				effects_ctx.fillRect(mapOffset + (p[0] + f[0]) * blocksize + Math.floor(blocksize/4), mapOffset + (p[1] + f[1]) * blocksize + Math.floor(blocksize/4), Math.floor(blocksize/2), Math.floor(blocksize/2));
+				setTimeout(function()
+				{
+					effects_ctx.clearRect(mapOffset + (p[0] + f[0]) * blocksize + Math.floor(blocksize/4), mapOffset + (p[1] + f[1]) * blocksize + Math.floor(blocksize/4), blocksize, blocksize);
+				},100);
+			}
+		];
 
 		//requests any position from the server
 		function requestPosition(newX, newY)
@@ -511,11 +578,17 @@ Written by Chris Rollins
 			effectsCanvas = document.getElementById("effects_canvas");
 			effects_ctx = effectsCanvas.getContext("2d");
 
-			background.width = window.innerWidth;
-			background.height = window.innerHeight;
+			fogCanvas = document.getElementById("fog_canvas");
+			fog_ctx = effectsCanvas.getContext("2d");
+
+			fogCanvas.width = window.innerWidth;
+			fogCanvas.height = window.innerHeight;
 
 			effectsCanvas.width = window.innerWidth;
 			effectsCanvas.height = window.innerHeight;
+
+			background.width = window.innerWidth;
+			background.height = window.innerHeight;
 
 			canvas.width = window.innerWidth;
 			canvas.height = window.innerHeight;
@@ -525,6 +598,7 @@ Written by Chris Rollins
 			back_ctx.fillStyle = "#000000";
 			effects_ctx.strokeStyle = "#000000";
 			effects_ctx.fillStyle = "#000000";
+			fog_ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
 
 			//Register all the events after setting up canvases
 			initEvents();
@@ -559,10 +633,10 @@ Written by Chris Rollins
 							if(i < 4)
 							{
 								localPlayer.setFacing(i);
-								localPlayer.moveForward();
+								//localPlayer.moveForward();
 								delay += moveLatency;
 							}
-							else if(pobj.countdown === 0)
+							if(pobj.countdown === 0)
 							{
 								pobj.countdown = pobj.cooldown;
 							}
