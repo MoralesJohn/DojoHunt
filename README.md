@@ -1,7 +1,5 @@
 # DojoHunt
-DojoHunt is a group project in JavaScript using Node, Express and websockets.
-
-The project was written by John Morales, John Pham and Chris Rollins at the Coding Dojo in San Jose, CA. 
+DojoHunt is a group project in JavaScript using Node, Express and websockets. The project was written by John Morales, John Pham and Chris Rollins at the Coding Dojo in San Jose, CA. 
 
 The software takes its inspiration from BSD Hunt which has been around for decades. The copyright to that work is held by the Regents of the University of California. 
 
